@@ -7,6 +7,7 @@ import com.retailer.customerrewardservice.dto.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 import java.util.Comparator;
 import java.util.List;
@@ -25,13 +26,17 @@ public class RewardsService {
      * @return
      */
     public FetchRewardsResponse fetchRewards(FetchRewardsRequest fetchRewardsRequest) {
+        FetchRewardsResponse fetchRewardsResponse = FetchRewardsResponse.builder().build();
         Optional<Customer> customerOptional = rewardsDao.fetchCustomerBasedOnCustomerId(fetchRewardsRequest.getCustomerId());
         if (customerOptional.isPresent()) {
+            Customer customer = customerOptional.get();
+            fetchRewardsResponse = FetchRewardsResponse.builder().customerId(customer.getId()).customerName(customer.getName()).build();
             List<Transaction> transactionList = rewardsDao.fetchTransactionsBasedOnCustomerIdAndDate(fetchRewardsRequest.getCustomerId(), fetchRewardsRequest.getFromDate(), fetchRewardsRequest.getToDate());
-            if (!transactionList.isEmpty()) {
-                return calculateAndPopulateRewardPoints(transactionList, customerOptional.get());
+            if (!CollectionUtils.isEmpty(transactionList)) {
+                return calculateAndPopulateRewardPoints(transactionList,fetchRewardsResponse);
             } else {
-                throw CustomerRewardException.builder().errorCode("1002").errorDescription("Reward Points Not Found").httpStatusCode(HttpStatus.INTERNAL_SERVER_ERROR).build();
+                //throw CustomerRewardException.builder().errorCode("1002").errorDescription("Reward Points Not Found").httpStatusCode(HttpStatus.INTERNAL_SERVER_ERROR).build();
+                return fetchRewardsResponse;
             }
         } else {
             throw CustomerRewardException.builder().errorCode("1001").errorDescription("Customer Not Found").httpStatusCode(HttpStatus.INTERNAL_SERVER_ERROR).build();
@@ -44,11 +49,10 @@ public class RewardsService {
      * 2. Stream Map via entrySet and build Rewards.
      * 3. sort based on month and collect rewards list.
      * @param transactionList
-     * @param customer
+     * @param fetchRewardsResponse
      * @return
      */
-    private FetchRewardsResponse calculateAndPopulateRewardPoints(List<Transaction> transactionList, Customer customer) {
-        FetchRewardsResponse fetchRewardsResponse = FetchRewardsResponse.builder().customerId(customer.getId()).customerName(customer.getName()).build();
+    private FetchRewardsResponse calculateAndPopulateRewardPoints(List<Transaction> transactionList,FetchRewardsResponse fetchRewardsResponse) {
         List<Rewards> rewardsList = transactionList.stream()
                 .collect(Collectors.groupingBy(transaction -> transaction.getTransactionDateTime().getMonth(),
                         Collectors.summingInt(RewardsService::calculateRewardPoints)))
