@@ -68,10 +68,17 @@ mvn clean package
 java -jar target/customerrewardservice-0.0.1-SNAPSHOT.jar
 ```
 
+## API Endpoints:
+
+| Method | Endpoint              | Description         |
+|--------|-----------------------|---------------------|
+| POST   | /api/v1/rewards/fetch | Fetch Reward Points |
+
+
 ### curl command:
 #### Input:
 ```
-curl --location 'http://localhost:8080/v1/api/rewards/fetch' \
+curl --location 'http://localhost:8080/api/v1/rewards/fetch' \
 --header 'Content-Type: application/json' \
 --data '{
     "customerId": "c11",
@@ -150,3 +157,6 @@ Customer Not Found:
     "errorCode": "1001"
 }
 ```
+
+## Conclusion:
+Thank you for checking out this project! We hope you find it useful for your needs. If you have any questions or feedback, feel free to reach out or open an issue on GitHub.
